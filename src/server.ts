@@ -5,6 +5,7 @@ import { environment } from './config/environment';
 import { testDatabaseConnection, closeDatabaseConnection } from './config/database';
 import { testRedisConnection, closeRedisConnection } from './config/redis';
 import { queueManager } from './queue';
+import { registerWebSocketRoutes, wsManager } from './websocket';
 import logger from './utils/logger';
 
 // Initialize Fastify
@@ -73,6 +74,7 @@ async function gracefulShutdown(signal: string) {
   logger.info(`${signal} received, starting graceful shutdown...`);
   
   try {
+    wsManager.closeAll();
     await queueManager.shutdown();
     await fastify.close();
     await closeDatabaseConnection();
@@ -90,6 +92,9 @@ async function start() {
   try {
     // Register plugins
     await registerPlugins();
+
+    // Register WebSocket routes
+    await registerWebSocketRoutes(fastify);
 
     // Test connections
     const dbHealthy = await testDatabaseConnection();

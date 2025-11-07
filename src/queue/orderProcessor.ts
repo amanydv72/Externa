@@ -5,6 +5,7 @@ import { orderRepository } from '../database';
 import { OrderStatus } from '../models';
 import { dexService } from '../services/dex';
 import { cacheService } from '../services/cache';
+import { wsManager } from '../websocket';
 import { calculateBackoff } from '../utils/helpers';
 import { OrderExecutionError } from '../utils/errors';
 import logger from '../utils/logger';
@@ -178,6 +179,14 @@ async function updateOrderStatus(
     status,
     message,
     timestamp: new Date(),
+  });
+
+  // Broadcast WebSocket update to connected clients
+  wsManager.broadcastStatusUpdate({
+    orderId,
+    status,
+    timestamp: new Date(),
+    data: { message },
   });
 
   logger.debug({ orderId, status, message }, 'Order status updated');
