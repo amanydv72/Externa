@@ -1,5 +1,5 @@
 import { orderRepository } from '../../database';
-import { CreateOrderDTO, OrderStatus } from '../../models';
+import { CreateOrderDTO, OrderStatus, OrderType } from '../../models';
 import { mapOrderRecordToOrder, mapOrderToNewRecord, formatOrderResponse } from '../../database';
 import logger from '../../utils/logger';
 
@@ -69,12 +69,11 @@ export class OrderService {
     try {
       const { status, limit = 10, offset = 0 } = filters;
 
-      let records;
-      if (status) {
-        records = await orderRepository.findByStatus(status as OrderStatus, limit);
-      } else {
-        records = await orderRepository.findAll(limit, offset);
-      }
+      const records = await orderRepository.findAll({
+        status: status as OrderStatus,
+        limit,
+        offset,
+      });
 
       const orders = records.map(mapOrderRecordToOrder);
       const formatted = orders.map(formatOrderResponse);
@@ -153,6 +152,51 @@ export class OrderService {
       logger.error({ error }, 'Failed to get order stats');
       throw error;
     }
+  }
+
+  /**
+   * Validate order data
+   */
+  async validateOrder(orderData: {
+    tokenIn: string;
+    tokenOut: string;
+    amountIn: number;
+    slippage: number;
+    orderType: OrderType;
+  }) {
+    const errors: string[] = [];
+
+    // Validate token addresses (basic Solana address format)
+    if (orderData.tokenIn.length < 32 || orderData.tokenIn.length > 44) {
+      errors.push('Invalid tokenIn address');
+    }
+    if (orderData.tokenOut.length < 32 || orderData.tokenOut.length > 44) {
+      errors.push('Invalid tokenOut address');
+    }
+
+    // Validate amounts
+    if (orderData.amountIn <= 0) {
+      errors.push('amountIn must be greater than 0');
+    }
+
+    // Validate slippage
+    if (orderData.slippage < 0.0001 || orderData.slippage > 0.5) {
+      errors.push('Slippage must be between 0.01% and 50%');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }
+
+  /**
+   * Get cached order from cache service
+   */
+  async getCachedOrder(_orderId: string) {
+    // This would typically use cacheService
+    // For now, return null to fall back to database
+    return null;
   }
 }
 

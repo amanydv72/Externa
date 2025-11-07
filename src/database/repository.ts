@@ -127,8 +127,43 @@ export class OrderRepository {
   /**
    * Find all orders with pagination
    */
-  async findAll(limit: number = 10, offset: number = 0): Promise<OrderRecord[]> {
+  async findAll(
+    options?: {
+      status?: OrderStatus;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<OrderRecord[]> {
+    const limit = options?.limit || 10;
+    const offset = options?.offset || 0;
+    
+    if (options?.status) {
+      return await db
+        .select()
+        .from(orders)
+        .where(eq(orders.status, options.status))
+        .orderBy(desc(orders.createdAt))
+        .limit(limit)
+        .offset(offset);
+    }
+    
     return await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(limit).offset(offset);
+  }
+
+  /**
+   * Count orders (optionally by status)
+   */
+  async count(status?: OrderStatus): Promise<number> {
+    if (status) {
+      const result = await db
+        .select({ count: orders.id })
+        .from(orders)
+        .where(eq(orders.status, status));
+      return result.length;
+    }
+    
+    const result = await db.select({ count: orders.id }).from(orders);
+    return result.length;
   }
 
   /**

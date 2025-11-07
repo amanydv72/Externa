@@ -6,6 +6,7 @@ import { testDatabaseConnection, closeDatabaseConnection } from './config/databa
 import { testRedisConnection, closeRedisConnection } from './config/redis';
 import { queueManager } from './queue';
 import { registerWebSocketRoutes, wsManager } from './websocket';
+import { registerApiRoutes } from './api';
 import logger from './utils/logger';
 
 // Initialize Fastify
@@ -95,6 +96,9 @@ async function start() {
 
     // Register WebSocket routes
     await registerWebSocketRoutes(fastify);
+
+    // Register API routes
+    await registerApiRoutes(fastify);
 
     // Test connections
     const dbHealthy = await testDatabaseConnection();
