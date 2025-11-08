@@ -2,7 +2,7 @@
   "info": {
     "name": "Order Execution Engine API",
     "_postman_id": "order-execution-engine-v1",
-    "description": "Complete API collection for testing the Order Execution Engine with DEX routing, WebSocket updates, and queue management.",
+    "description": "Complete API collection for testing the Order Execution Engine with DEX routing, WebSocket updates, queue management, and NEW Wrapped SOL (WSOL) handling for seamless native SOL trading.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "1.0.0"
   },
@@ -16,6 +16,26 @@
       "key": "orderId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "nativeSOL",
+      "value": "11111111111111111111111111111111",
+      "type": "string"
+    },
+    {
+      "key": "wrappedSOL",
+      "value": "So11111111111111111111111111111111111111112",
+      "type": "string"
+    },
+    {
+      "key": "USDC",
+      "value": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "type": "string"
+    },
+    {
+      "key": "USDT",
+      "value": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      "type": "string"
     }
   ],
   "item": [
@@ -23,7 +43,7 @@
       "name": "Orders",
       "item": [
         {
-          "name": "Execute Order (SOL to USDC)",
+          "name": "Execute Order (Native SOL to USDC) - WSOL Demo",
           "event": [
             {
               "listen": "test",
@@ -37,6 +57,63 @@
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData).to.have.property('orderId');",
                   "    pm.environment.set(\"orderId\", jsonData.orderId);",
+                  "});",
+                  "",
+                  "pm.test(\"Status is pending\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('pending');",
+                  "});",
+                  "",
+                  "pm.test(\"WebSocket URL is provided\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.websocketUrl).to.match(/^wss?:\\/\\//);",
+                  "});",
+                  "",
+                  "pm.test(\"Order data includes tokens\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('tokenIn');",
+                  "    pm.expect(jsonData.data).to.have.property('tokenOut');",
+                  "    pm.expect(jsonData.data).to.have.property('amountIn');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenIn\": \"{{nativeSOL}}\",\n  \"tokenOut\": \"{{USDC}}\",\n  \"amountIn\": 10,\n  \"slippage\": 0.01,\n  \"orderType\": \"market\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/execute",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "execute"]
+            },
+            "description": "🚀 NEW: Submit a market order using NATIVE SOL address! The system will automatically handle WSOL conversion for DEX compatibility. User-friendly experience - no need to know about WSOL."
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Order (USDC to Native SOL) - WSOL Demo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has orderId\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('orderId');",
                   "});",
                   "",
                   "pm.test(\"Status is pending\", function () {",
@@ -62,19 +139,46 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tokenIn\": \"So11111111111111111111111111111111111111112\",\n  \"tokenOut\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n  \"amountIn\": 10,\n  \"slippage\": 0.01\n}"
+              "raw": "{\n  \"tokenIn\": \"{{USDC}}\",\n  \"tokenOut\": \"{{nativeSOL}}\",\n  \"amountIn\": 100,\n  \"slippage\": 0.01,\n  \"orderType\": \"market\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/orders/execute",
               "host": ["{{baseUrl}}"],
               "path": ["api", "orders", "execute"]
             },
-            "description": "Submit a market order to exchange SOL for USDC. The order will be queued for processing and executed via the best DEX (Raydium or Meteora)."
+            "description": "🚀 NEW: Submit a market order to get NATIVE SOL! The system will execute USDC→WSOL swap then automatically unwrap WSOL to native SOL for the user."
           },
           "response": []
         },
         {
-          "name": "Execute Order (Custom Slippage)",
+          "name": "Execute Order (WSOL to USDC) - Legacy Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has orderId\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('orderId');",
+                  "});",
+                  "",
+                  "pm.test(\"Status is pending\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('pending');",
+                  "});",
+                  "",
+                  "pm.test(\"WebSocket URL is provided\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.websocketUrl).to.match(/^wss?:\\/\\//);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -85,14 +189,37 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tokenIn\": \"So11111111111111111111111111111111111111112\",\n  \"tokenOut\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n  \"amountIn\": 5.5,\n  \"slippage\": 0.02\n}"
+              "raw": "{\n  \"tokenIn\": \"So11111111111111111111111111111111111111112\",\n  \"tokenOut\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n  \"amountIn\": 10,\n  \"slippage\": 0.01,\n  \"orderType\": \"market\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/orders/execute",
               "host": ["{{baseUrl}}"],
               "path": ["api", "orders", "execute"]
             },
-            "description": "Execute order with custom slippage tolerance (2%)."
+            "description": "Traditional WSOL address format still works! Backward compatibility maintained for existing integrations."
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Order (Native SOL with Custom Slippage)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenIn\": \"11111111111111111111111111111111\",\n  \"tokenOut\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n  \"amountIn\": 5.5,\n  \"slippage\": 0.02,\n  \"orderType\": \"market\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/execute",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "execute"]
+            },
+            "description": "Execute order using native SOL with custom slippage tolerance (2%). Demonstrates WSOL handling with custom parameters."
           },
           "response": []
         },
@@ -330,11 +457,109 @@
           "response": []
         }
       ],
-      "description": "WebSocket connection endpoints. Note: For actual WebSocket connections, use a WebSocket client (e.g., wscat, browser console)."
+      "description": "WebSocket connection endpoints for real-time order status updates. Supports status streaming for all order types including WSOL-enhanced swaps. Note: For actual WebSocket connections, use a WebSocket client (e.g., wscat, browser console)."
     },
     {
       "name": "Validation Tests",
       "item": [
+        {
+          "name": "Invalid SOL to WSOL Swap",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Error mentions SOL/WSOL validation\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message.toLowerCase()).to.include('sol');",
+                  "    pm.expect(jsonData.message.toLowerCase()).to.include('wsol');",
+                  "});",
+                  "",
+                  "pm.test(\"Response has expected error structure\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.equal(false);",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "    pm.expect(jsonData.statusCode).to.equal(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenIn\": \"11111111111111111111111111111111\",\n  \"tokenOut\": \"So11111111111111111111111111111111111111112\",\n  \"amountIn\": 10,\n  \"slippage\": 0.01,\n  \"orderType\": \"market\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/execute",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "execute"]
+            },
+            "description": "🚫 NEW WSOL VALIDATION: Test attempting to swap Native SOL for WSOL (should fail - they represent the same asset)."
+          },
+          "response": []
+        },
+        {
+          "name": "Invalid WSOL to SOL Swap",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Error mentions SOL/WSOL validation\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message.toLowerCase()).to.include('sol');",
+                  "    pm.expect(jsonData.message.toLowerCase()).to.include('wsol');",
+                  "});",
+                  "",
+                  "pm.test(\"Response has expected error structure\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.equal(false);",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "    pm.expect(jsonData.statusCode).to.equal(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenIn\": \"So11111111111111111111111111111111111111112\",\n  \"tokenOut\": \"11111111111111111111111111111111\",\n  \"amountIn\": 10,\n  \"slippage\": 0.01,\n  \"orderType\": \"market\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/execute",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "execute"]
+            },
+            "description": "🚫 NEW WSOL VALIDATION: Test attempting to swap WSOL for Native SOL (should fail - they represent the same asset)."
+          },
+          "response": []
+        },
         {
           "name": "Invalid Token Address",
           "event": [
@@ -541,6 +766,149 @@
         }
       ],
       "description": "Test requests that should trigger validation errors"
+    },
+    {
+      "name": "WSOL (Wrapped SOL) Features",
+      "item": [
+        {
+          "name": "Token Symbol Examples",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ws/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["ws", "health"]
+            },
+            "description": "📋 Token Address Reference:\n\n🟢 Native SOL: 11111111111111111111111111111111\n🟠 Wrapped SOL (WSOL): So11111111111111111111111111111111111111112\n🔵 USDC: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\n🟣 USDT: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB\n\n💡 Pro Tip: You can now use either Native SOL or WSOL addresses - the system handles conversion automatically!"
+          },
+          "response": []
+        },
+        {
+          "name": "Test Native SOL → Token Swap",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Accepts native SOL address\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.equal(true);",
+                  "    pm.expect(jsonData).to.have.property('orderId');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenIn\": \"11111111111111111111111111111111\",\n  \"tokenOut\": \"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB\",\n  \"amountIn\": 2.5,\n  \"slippage\": 0.015,\n  \"orderType\": \"market\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/execute",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "execute"]
+            },
+            "description": "🚀 Test swapping Native SOL → USDT using the native SOL address. System automatically wraps SOL to WSOL for DEX compatibility."
+          },
+          "response": []
+        },
+        {
+          "name": "Test Token → Native SOL Swap",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Accepts native SOL as output\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.equal(true);",
+                  "    pm.expect(jsonData).to.have.property('orderId');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenIn\": \"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB\",\n  \"tokenOut\": \"11111111111111111111111111111111\",\n  \"amountIn\": 50,\n  \"slippage\": 0.01,\n  \"orderType\": \"market\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/execute",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "execute"]
+            },
+            "description": "🚀 Test swapping USDT → Native SOL. System executes USDT→WSOL swap then automatically unwraps WSOL to native SOL."
+          },
+          "response": []
+        },
+        {
+          "name": "Test Backward Compatibility (WSOL Address)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Still accepts WSOL address\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.equal(true);",
+                  "    pm.expect(jsonData).to.have.property('orderId');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenIn\": \"So11111111111111111111111111111111111111112\",\n  \"tokenOut\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n  \"amountIn\": 1,\n  \"slippage\": 0.01,\n  \"orderType\": \"market\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/execute",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "execute"]
+            },
+            "description": "✅ Backward compatibility test: Traditional WSOL address format still works perfectly."
+          },
+          "response": []
+        }
+      ],
+      "description": "🚀 NEW: Test Wrapped SOL (WSOL) handling features - seamless native SOL trading with automatic DEX compatibility"
     }
   ]
 }
