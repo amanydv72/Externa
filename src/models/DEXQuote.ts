@@ -20,6 +20,14 @@ export interface SwapResult {
   actualSlippage: number;
   gasUsed?: number;
   timestamp: Date;
+  wsolHandling?: {
+    wrappedInput: boolean;
+    unwrappedOutput: boolean;
+    originalTokenIn: string;
+    originalTokenOut: string;
+    tokenInSymbol: string;
+    tokenOutSymbol: string;
+  };
 }
 
 export interface RoutingDecision {
