@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Execution Monitor - Enhanced UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#667eea',
+                        secondary: '#764ba2',
+                        raydium: '#e91e63',
+                        meteora: '#2196f3',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes pulse-ring {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.05); }
+        }
+        .processing-card {
+            animation: pulse-ring 2s ease-in-out infinite;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .order-card {
+            animation: slideIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-primary to-secondary min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <h1 class="text-white text-2xl font-bold text-center mb-4 drop-shadow-lg">
+            Order Execution Engine - Live Monitor
+        </h1>
+
+        <!-- Controls Panel -->
+        <div class="bg-white rounded-lg shadow-xl p-3 mb-3">
+            <h2 class="text-lg font-bold text-gray-800 mb-2">Configuration</h2>
+            
+            <!-- Base URL -->
+            <div class="mb-2">
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Base URL</label>
+                <input type="text" id="baseUrl" value="https://eterna-production.up.railway.app" 
+                    class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+            </div>
+
+            <!-- Token Selection -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Token In</label>
+                    <select id="tokenIn" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <option value="11111111111111111111111111111111">Native SOL</option>
+                        <option value="So11111111111111111111111111111111111111112">Wrapped SOL (WSOL)</option>
+                        <option value="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v">USDC</option>
+                        <option value="Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB">USDT</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Token Out</label>
+                    <select id="tokenOut" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <option value="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v">USDC</option>
+                        <option value="Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB">USDT</option>
+                        <option value="11111111111111111111111111111111">Native SOL</option>
+                        <option value="So11111111111111111111111111111111111111112">Wrapped SOL (WSOL)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Amount and Slippage -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Amount In</label>
+                    <input type="number" id="amountIn" value="1.5" step="0.1" min="0.1" 
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Slippage (%)</label>
+                    <input type="number" id="slippage" value="1" step="0.1" min="0.1" max="50" 
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+
+            <!-- Delay Controls -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Exec Delay (s)</label>
+                    <input type="number" id="executionDelay" value="3" min="0" max="10" step="0.5" 
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Submit Delay (ms)</label>
+                    <input type="number" id="submissionDelay" value="800" min="0" max="3000" step="100" 
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap gap-2">
+                <button onclick="submitOrder()" 
+                    class="px-4 py-1.5 text-sm bg-primary text-white rounded-lg font-semibold hover:bg-opacity-90 transition shadow-lg">
+                    Submit 1
+                </button>
+                <button onclick="submitMultipleOrders(3)" 
+                    class="px-4 py-1.5 text-sm bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition shadow-lg">
+                    Submit 3
+                </button>
+                <button onclick="submitMultipleOrders(5)" 
+                    class="px-4 py-1.5 text-sm bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-lg">
+                    Submit 5
+                </button>
+                <button onclick="clearOrders()" 
+                    class="px-4 py-1.5 text-sm bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition shadow-lg">
+                    Clear All
+                </button>
+            </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="bg-white rounded-lg shadow-lg p-2 mb-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="relative">
+                    <div id="connectionIndicator" class="w-2 h-2 rounded-full bg-gray-400"></div>
+                    <div id="connectionPulse" class="absolute inset-0 w-2 h-2 rounded-full bg-green-400 animate-ping hidden"></div>
+                </div>
+                <span id="connectionStatus" class="font-semibold text-gray-700 text-xs">Disconnected</span>
+            </div>
+            <span id="timestamp" class="text-gray-500 font-mono text-xs"></span>
+        </div>
+
+        <!-- Stats Dashboard -->
+        <div class="grid grid-cols-5 gap-2 mb-3">
+            <div class="bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-lg p-3 text-center border border-gray-200">
+                <div id="totalOrders" class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">0</div>
+                <div class="text-xs text-gray-600 mt-1 font-semibold">Total</div>
+            </div>
+            <div class="bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-lg p-3 text-center border border-gray-200">
+                <div id="pendingCount" class="text-2xl font-bold text-gray-500">0</div>
+                <div class="text-xs text-gray-600 mt-1 font-semibold">Pending</div>
+            </div>
+            <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg shadow-lg p-3 text-center border border-blue-200">
+                <div id="processingCount" class="text-2xl font-bold text-blue-600">0</div>
+                <div class="text-xs text-blue-700 mt-1 font-semibold">Processing</div>
+            </div>
+            <div class="bg-gradient-to-br from-white to-green-50 rounded-lg shadow-lg p-3 text-center border border-green-200">
+                <div id="confirmedCount" class="text-2xl font-bold text-green-600">0</div>
+                <div class="text-xs text-green-700 mt-1 font-semibold">Confirmed</div>
+            </div>
+            <div class="bg-gradient-to-br from-white to-red-50 rounded-lg shadow-lg p-3 text-center border border-red-200">
+                <div id="failedCount" class="text-2xl font-bold text-red-600">0</div>
+                <div class="text-xs text-red-700 mt-1 font-semibold">Failed</div>
+            </div>
+        </div>
+
+        <!-- Queue Visualization -->
+        <div class="bg-gradient-to-br from-white to-indigo-50 rounded-lg shadow-lg p-3 mb-3 border border-indigo-200">
+            <h2 class="text-sm font-bold text-gray-800 mb-2 flex items-center">
+                <span class="w-2 h-2 bg-gradient-to-r from-primary to-secondary rounded-full mr-2 animate-pulse"></span>
+                Queue Status
+            </h2>
+            <div class="space-y-2">
+                <div class="flex items-center justify-between bg-white rounded-lg p-2 shadow-sm">
+                    <span class="text-xs font-semibold text-gray-700">Active Workers:</span>
+                    <span id="activeWorkers" class="text-sm font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">0 / 5</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4 shadow-inner">
+                    <div id="queueProgress" class="bg-gradient-to-r from-green-400 via-emerald-500 to-green-600 h-4 rounded-full transition-all duration-500 shadow-md flex items-center justify-end pr-2" style="width: 0%">
+                        <span class="text-xs font-bold text-white" id="queueProgressText"></span>
+                    </div>
+                </div>
+                <div class="flex justify-between text-xs bg-white rounded-lg p-1.5 shadow-sm">
+                    <span id="queueStatus" class="font-semibold text-gray-700">Idle</span>
+                    <span id="queuePercentage" class="font-bold text-indigo-600">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Grid -->
+        <div id="ordersContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"></div>
+    </div>
+
+    <script>
+        const orders = new Map();
+        const websockets = new Map();
+        
+        // Update timestamp
+        function updateTimestamp() {
+            document.getElementById('timestamp').textContent = new Date().toLocaleTimeString();
+        }
+        setInterval(updateTimestamp, 1000);
+        updateTimestamp();
+
+        // Submit single order
+        async function submitOrder() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const tokenIn = document.getElementById('tokenIn').value;
+            const tokenOut = document.getElementById('tokenOut').value;
+            const amountIn = parseFloat(document.getElementById('amountIn').value);
+            const slippage = parseFloat(document.getElementById('slippage').value) / 100;
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/orders/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tokenIn,
+                        tokenOut,
+                        amountIn,
+                        slippage,
+                        orderType: 'market'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addOrder(data.orderId, data);
+                    connectWebSocket(data.orderId, baseUrl);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Failed to submit order: ' + error.message);
+            }
+        }
+
+        // Submit multiple orders
+        async function submitMultipleOrders(count) {
+            const delay = parseInt(document.getElementById('submissionDelay').value) || 500;
+            for (let i = 0; i < count; i++) {
+                await submitOrder();
+                if (i < count - 1) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+
+        // Add order to map
+        function addOrder(orderId, data) {
+            const executionDelay = parseFloat(document.getElementById('executionDelay').value) || 0;
+            
+            orders.set(orderId, {
+                id: orderId,
+                tokenIn: data.tokenIn || document.getElementById('tokenIn').value,
+                tokenOut: data.tokenOut || document.getElementById('tokenOut').value,
+                amountIn: data.amountIn || parseFloat(document.getElementById('amountIn').value),
+                status: 'pending',
+                timeline: [{
+                    status: 'pending',
+                    message: 'Order received and queued',
+                    time: new Date()
+                }],
+                executionDelay: executionDelay,
+                dexQuotes: null,
+                dex: null,
+                amountOut: null,
+                signature: null
+            });
+            
+            renderOrders();
+            updateStats();
+            updateQueueStatus();
+        }
+
+        // Connect WebSocket
+        function connectWebSocket(orderId, baseUrl) {
+            const order = orders.get(orderId);
+            const executionDelay = order.executionDelay || 0;
+            
+            if (executionDelay > 0) {
+                simulateOrderProcessing(orderId, executionDelay);
+            } else {
+                const wsUrl = baseUrl.replace('https://', 'wss://').replace('http://', 'ws://');
+                const ws = new WebSocket(`${wsUrl}/ws/orders/${orderId}`);
+                
+                ws.onopen = () => {
+                    document.getElementById('connectionStatus').textContent = 'Connected';
+                    document.getElementById('connectionIndicator').className = 'w-3 h-3 rounded-full bg-green-500';
+                    document.getElementById('connectionPulse').classList.remove('hidden');
+                };
+                
+                ws.onmessage = (event) => {
+                    const update = JSON.parse(event.data);
+                    updateOrder(orderId, update);
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+                
+                ws.onclose = () => {
+                    document.getElementById('connectionStatus').textContent = 'Disconnected';
+                    document.getElementById('connectionIndicator').className = 'w-3 h-3 rounded-full bg-gray-400';
+                    document.getElementById('connectionPulse').classList.add('hidden');
+                };
+                
+                websockets.set(orderId, ws);
+            }
+        }
+
+        // Simulate order processing for demo
+        async function simulateOrderProcessing(orderId, delay) {
+            const order = orders.get(orderId);
+            
+            // Step 1: ROUTING
+            await new Promise(resolve => setTimeout(resolve, delay * 1000));
+            const raydiumPrice = (Math.random() * 2 + 154).toFixed(2);
+            const meteoraPrice = (Math.random() * 2 + 154).toFixed(2);
+            const selectedDex = parseFloat(raydiumPrice) > parseFloat(meteoraPrice) ? 'raydium' : 'meteora';
+            
+            updateOrder(orderId, {
+                status: 'routing',
+                message: 'Comparing DEX prices...',
+                timestamp: new Date().toISOString(),
+                data: {
+                    raydiumQuote: raydiumPrice,
+                    meteoraQuote: meteoraPrice,
+                    selectedDex: selectedDex
+                }
+            });
+            
+            // Step 2: BUILDING
+            await new Promise(resolve => setTimeout(resolve, delay * 1000));
+            updateOrder(orderId, {
+                status: 'building',
+                message: `Building transaction on ${selectedDex.toUpperCase()}...`,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Step 3: SUBMITTED
+            await new Promise(resolve => setTimeout(resolve, delay * 1000));
+            const txSignature = generateRandomSignature();
+            updateOrder(orderId, {
+                status: 'submitted',
+                message: 'Transaction submitted to blockchain',
+                timestamp: new Date().toISOString(),
+                data: {
+                    transactionSignature: txSignature
+                }
+            });
+            
+            // Step 4: CONFIRMED
+            await new Promise(resolve => setTimeout(resolve, delay * 1000));
+            const outputAmount = (parseFloat(raydiumPrice) * order.amountIn).toFixed(2);
+            updateOrder(orderId, {
+                status: 'confirmed',
+                message: 'Order confirmed successfully',
+                timestamp: new Date().toISOString(),
+                data: {
+                    amountOut: outputAmount,
+                    transactionSignature: txSignature,
+                    dex: selectedDex
+                }
+            });
+        }
+
+        function generateRandomSignature() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let signature = '';
+            for (let i = 0; i < 88; i++) {
+                signature += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return signature;
+        }
+
+        // Update order
+        function updateOrder(orderId, update) {
+            const order = orders.get(orderId);
+            if (!order) return;
+            
+            order.status = update.status;
+            order.timeline.push({
+                status: update.status,
+                message: update.message,
+                time: new Date(update.timestamp || Date.now())
+            });
+            
+            if (update.data) {
+                if (update.data.raydiumQuote && update.data.meteoraQuote) {
+                    order.dexQuotes = {
+                        raydium: update.data.raydiumQuote,
+                        meteora: update.data.meteoraQuote,
+                        selected: update.data.selectedDex
+                    };
+                }
+                if (update.data.amountOut) order.amountOut = update.data.amountOut;
+                if (update.data.transactionSignature) order.signature = update.data.transactionSignature;
+                if (update.data.dex) order.dex = update.data.dex;
+            }
+            
+            renderOrders();
+            updateStats();
+            updateQueueStatus();
+        }
+
+        // Render orders
+        function renderOrders() {
+            const container = document.getElementById('ordersContainer');
+            container.innerHTML = '';
+            
+            Array.from(orders.values()).reverse().forEach(order => {
+                const card = document.createElement('div');
+                const isProcessing = ['routing', 'building', 'submitted'].includes(order.status);
+                
+                card.className = `order-card bg-white rounded-lg shadow-md p-3 ${isProcessing ? 'processing-card ring-2 ring-blue-400' : ''}`;
+                
+                const tokenInShort = getTokenSymbol(order.tokenIn);
+                const tokenOutShort = getTokenSymbol(order.tokenOut);
+                
+                // Status badge colors with gradients
+                const statusColors = {
+                    pending: 'bg-gradient-to-r from-gray-400 to-gray-500',
+                    routing: 'bg-gradient-to-r from-blue-500 to-blue-600',
+                    building: 'bg-gradient-to-r from-yellow-400 to-orange-500',
+                    submitted: 'bg-gradient-to-r from-orange-500 to-red-500',
+                    confirmed: 'bg-gradient-to-r from-green-500 to-emerald-600',
+                    failed: 'bg-gradient-to-r from-red-600 to-red-700'
+                };
+                
+                // DEX comparison HTML
+                let dexComparisonHtml = '';
+                if (order.dexQuotes) {
+                    const raydiumWins = order.dexQuotes.selected === 'raydium';
+                    
+                    dexComparisonHtml = `
+                        <div class="mt-2 p-2 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-300 shadow-sm">
+                            <div class="text-xs font-bold text-gray-800 mb-1.5 flex items-center">
+                                <span class="w-1.5 h-1.5 bg-gradient-to-r from-primary to-secondary rounded-full mr-1.5"></span>
+                                DEX Routing
+                            </div>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <div class="p-2 rounded-lg ${raydiumWins ? 'bg-gradient-to-br from-green-50 to-emerald-100 border-2 border-green-500 shadow-md' : 'bg-white border border-gray-200'}">
+                                    <div class="text-xs font-bold text-pink-600">Raydium</div>
+                                    <div class="text-lg font-black ${raydiumWins ? 'text-green-700' : 'text-gray-700'}">$${order.dexQuotes.raydium}</div>
+                                    <div class="text-xs font-bold ${raydiumWins ? 'text-green-600' : 'text-gray-400'}">
+                                        ${raydiumWins ? '✓ SELECTED' : ''}
+                                    </div>
+                                </div>
+                                <div class="p-2 rounded-lg ${!raydiumWins ? 'bg-gradient-to-br from-green-50 to-emerald-100 border-2 border-green-500 shadow-md' : 'bg-white border border-gray-200'}">
+                                    <div class="text-xs font-bold text-blue-600">Meteora</div>
+                                    <div class="text-lg font-black ${!raydiumWins ? 'text-green-700' : 'text-gray-700'}">$${order.dexQuotes.meteora}</div>
+                                    <div class="text-xs font-bold ${!raydiumWins ? 'text-green-600' : 'text-gray-400'}">
+                                        ${!raydiumWins ? '✓ SELECTED' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="font-mono text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">${order.id.substring(0, 10)}...</div>
+                        <span class="${statusColors[order.status]} text-white text-xs font-bold px-2 py-0.5 rounded-full uppercase shadow-md">
+                            ${order.status}
+                        </span>
+                    </div>
+                    
+                    <div class="space-y-1 text-sm">
+                        <div class="flex justify-between items-center bg-gradient-to-r from-indigo-50 to-purple-50 px-2 py-1 rounded">
+                            <span class="text-gray-700 text-xs font-semibold">Swap:</span>
+                            <span class="font-bold text-xs text-indigo-700">${order.amountIn} ${tokenInShort} → ${tokenOutShort}</span>
+                        </div>
+                        ${order.dex ? `
+                        <div class="flex justify-between items-center bg-blue-50 px-2 py-1 rounded">
+                            <span class="text-gray-700 text-xs font-semibold">DEX:</span>
+                            <span class="font-bold uppercase text-xs text-blue-700">${order.dex}</span>
+                        </div>
+                        ` : ''}
+                        ${order.amountOut ? `
+                        <div class="flex justify-between items-center bg-green-50 px-2 py-1 rounded">
+                            <span class="text-gray-700 text-xs font-semibold">Out:</span>
+                            <span class="font-bold text-green-700 text-xs">${order.amountOut}</span>
+                        </div>
+                        ` : ''}
+                        ${order.signature ? `
+                        <div class="flex justify-between items-center bg-orange-50 px-2 py-1 rounded">
+                            <span class="text-gray-700 text-xs font-semibold">TX:</span>
+                            <span class="font-mono text-xs text-orange-700">${order.signature.substring(0, 10)}...</span>
+                        </div>
+                        ` : ''}
+                        ${order.executionDelay > 0 ? `
+                        <div class="p-1 bg-gradient-to-r from-yellow-100 to-orange-100 border-l-2 border-yellow-600 text-xs text-yellow-900 font-semibold rounded">
+                            Demo: ${order.executionDelay}s
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${dexComparisonHtml}
+                    
+                    ${order.timeline.length > 1 ? `
+                    <button onclick="toggleTimeline('${order.id}')" 
+                        class="mt-2 w-full px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded transition flex items-center justify-center">
+                        <span id="timeline-icon-${order.id}">▼</span>
+                        <span class="ml-1">Timeline (${order.timeline.length})</span>
+                    </button>
+                    <div id="timeline-${order.id}" class="hidden mt-2 space-y-1 border-t pt-2">
+                        ${order.timeline.slice(-4).map(item => `
+                            <div class="flex items-start space-x-1.5 text-xs">
+                                <div class="w-1.5 h-1.5 mt-1 rounded-full bg-primary flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <div class="text-gray-700">${item.message}</div>
+                                    <div class="text-gray-400 text-xs">${item.time.toLocaleTimeString()}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function getTokenSymbol(address) {
+            const tokens = {
+                '11111111111111111111111111111111': 'SOL',
+                'So11111111111111111111111111111111111111112': 'WSOL',
+                'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
+                'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'USDT'
+            };
+            return tokens[address] || address.substring(0, 4) + '...';
+        }
+
+        // Update stats
+        function updateStats() {
+            const stats = {
+                total: orders.size,
+                pending: 0,
+                processing: 0,
+                confirmed: 0,
+                failed: 0
+            };
+            
+            orders.forEach(order => {
+                if (order.status === 'pending') stats.pending++;
+                else if (['routing', 'building', 'submitted'].includes(order.status)) stats.processing++;
+                else if (order.status === 'confirmed') stats.confirmed++;
+                else if (order.status === 'failed') stats.failed++;
+            });
+            
+            document.getElementById('totalOrders').textContent = stats.total;
+            document.getElementById('pendingCount').textContent = stats.pending;
+            document.getElementById('processingCount').textContent = stats.processing;
+            document.getElementById('confirmedCount').textContent = stats.confirmed;
+            document.getElementById('failedCount').textContent = stats.failed;
+        }
+
+        // Update queue status
+        function updateQueueStatus() {
+            const total = orders.size;
+            const confirmed = Array.from(orders.values()).filter(o => o.status === 'confirmed').length;
+            const processing = Array.from(orders.values()).filter(o => ['routing', 'building', 'submitted'].includes(o.status)).length;
+            
+            const percentage = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+            
+            document.getElementById('activeWorkers').textContent = `${processing} / 5`;
+            document.getElementById('queueProgress').style.width = `${percentage}%`;
+            document.getElementById('queuePercentage').textContent = `${percentage}% Complete`;
+            document.getElementById('queueProgressText').textContent = percentage > 10 ? `${percentage}%` : '';
+            
+            if (processing > 0) {
+                document.getElementById('queueStatus').textContent = `Processing ${processing} order(s)...`;
+            } else if (confirmed > 0 && confirmed === total) {
+                document.getElementById('queueStatus').textContent = 'All orders completed';
+            } else {
+                document.getElementById('queueStatus').textContent = 'Idle';
+            }
+        }
+
+        // Clear orders
+        function clearOrders() {
+            websockets.forEach(ws => ws.close());
+            websockets.clear();
+            orders.clear();
+            renderOrders();
+            updateStats();
+            updateQueueStatus();
+        }
+
+        // Toggle timeline visibility
+        function toggleTimeline(orderId) {
+            const timeline = document.getElementById(`timeline-${orderId}`);
+            const icon = document.getElementById(`timeline-icon-${orderId}`);
+            
+            if (timeline.classList.contains('hidden')) {
+                timeline.classList.remove('hidden');
+                icon.textContent = '▲';
+            } else {
+                timeline.classList.add('hidden');
+                icon.textContent = '▼';
+            }
+        }
+    </script>
+</body>
+</html>
